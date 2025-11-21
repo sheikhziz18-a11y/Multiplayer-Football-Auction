@@ -1,152 +1,145 @@
-body {
-  margin: 0;
-  font-family: Arial;
-  background: #ffffff;
-  padding: 0 10px;
+:root {
+  --bid-navy: #001F5A; /* NAVY BLUE */
+  --skip-red: #8B0000;
+  --win-green: #0b7a3f;
 }
 
-.hidden { display: none; }
+* { box-sizing: border-box; }
+body { margin:0; font-family:Arial; background:#fff; }
 
-.titleMain {
-  text-align: center;
-  margin-top: 40px;
+/* HIDE */
+.hidden { display:none !important; }
+
+/* LOGIN PAGE */
+#loginPage {
+  width:100%; height:100vh;
+  display:flex; align-items:center; justify-content:center;
+  background:#0b0b0b; color:#fff;
 }
-
-.loginBlock {
-  background: #f5f5f5;
-  padding: 20px;
-  margin: 20px auto;
-  width: 300px;
-  border-radius: 10px;
+.login-container{ max-width:640px; text-align:center; }
+.title{ font-size:32px; margin-bottom:16px; }
+.login-box{
+  background:#ffffff10; padding:15px; border-radius:10px; margin:10px;
 }
-
-#playerCard {
-  background: #fafafa;
-  padding: 15px;
-  border-radius: 10px;
-  margin-top: 20px;
-  text-align: center;
+.login-box input{
+  width:220px; padding:8px; border-radius:6px; border:1px solid #ccc;
 }
-
-#timerRow {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 10px;
+.login-box button{
+  padding:10px 20px; border:none; border-radius:8px;
+  background:#111; color:#fff; cursor:pointer;
 }
 
-.timerBox {
-  font-size: 18px;
-  font-weight: bold;
+/* AUCTION PAGE */
+#auctionPage{ padding:12px; min-height:100vh; }
+.top-bar{
+  display:flex; justify-content:space-between; padding:10px;
+  border-bottom:2px solid #000; font-weight:700;
 }
 
-.blink {
-  animation: blinkAnim 0.6s infinite;
+.main-layout{ display:flex; gap:20px; padding:18px; }
+.left-panel{ flex:1; text-align:center; }
+.right-panel{ flex:1; }
+
+/* Wheel */
+#wheel{
+  width:280px; height:280px; border-radius:50%;
+  border:6px solid #222;
+  background: conic-gradient(
+    #ffdddd 0deg 36deg,
+    #ddeeff 36deg 72deg,
+    #ddffdd 72deg 108deg,
+    #ffeecc 108deg 144deg,
+    #ffccdd 144deg 180deg,
+    #ccddff 180deg 216deg,
+    #ddffee 216deg 252deg,
+    #ffddcc 252deg 288deg,
+    #eeddff 288deg 324deg,
+    #cceeff 324deg 360deg
+  );
 }
-@keyframes blinkAnim {
-  0% { color: red; }
-  50% { color: black; }
-  100% { color: red; }
+.wheel-labels{
+  position:absolute; width:280px; height:280px;
+  top:calc(50% - 140px); left:calc(50% - 140px);
+  pointer-events:none;
+}
+.slice-label{
+  position:absolute; width:120px;
+  left:50%; top:50%;
+  font-weight:700; font-size:14px;
+}
+.wheel-pointer{
+  position:absolute; top:6px; left:50%;
+  transform:translateX(-50%);
+  font-size:26px; color:#c00; font-weight:900;
 }
 
-#actionButtons {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 20px;
+/* Player card */
+.player-card{
+  margin-top:20px; padding:14px; border:2px solid #111;
+  border-radius:10px; background:#fafafa; font-size:18px;
+}
+#playerName{ font-size:20px; font-weight:700; }
+
+/* Timers */
+.timers-box{ display:flex; gap:10px; margin-bottom:10px; }
+.timer{
+  flex:1; padding:8px; border:2px solid #111; border-radius:8px;
+  text-align:center;
+}
+@keyframes blink{
+  0%{opacity:1;} 50%{opacity:0.2;} 100%{opacity:1;}
+}
+.blink{ animation:blink 0.8s linear infinite; }
+
+/* Buttons */
+.buttons-box{ display:flex; gap:10px; margin-bottom:12px; }
+.bid-btn{
+  background:var(--bid-navy); color:white; border:none;
+  padding:12px; border-radius:10px; font-weight:700; cursor:pointer;
+}
+.skip-btn{
+  background:var(--skip-red); color:white; border:none;
+  padding:12px; border-radius:10px; font-weight:700; cursor:pointer;
 }
 
-#bidBtn {
-  background: #004d00;
-  color: navy;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 18px;
+/* Logs */
+.log-box{
+  height:220px; overflow:auto; border:2px solid #111;
+  padding:10px; border-radius:8px; background:#fff;
 }
-#skipBtn {
-  background: #b30000;
-  color: red;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 18px;
+.log-entry{ margin:5px 0; }
+.log-entry.spin{ color:#001f4d; }
+.log-entry.skip{ color:#8B0000; }
+.log-entry.win{ color:#0b7a3f; }
+
+/* Summary */
+.summary-panel{ margin-top:15px; padding:10px; border-top:2px solid #000; }
+.summary-player{ padding:8px; border-bottom:1px solid #ddd; cursor:pointer; }
+.player-team{ display:none; margin-left:12px; }
+.player-team.show{ display:block; }
+
+/* NEW PANELS */
+.remaining-panel, .unsold-panel{
+  margin-top:20px; padding:10px;
+  border-top:2px solid #000;
 }
 
-.bigButton {
-  margin-top: 20px;
-  padding: 14px 25px;
-  font-size: 20px;
+.collapse{ border-bottom:1px solid #ccc; }
+.collapse-head{
+  padding:6px; font-weight:700;
+  cursor:pointer; background:#f3f3f3;
+}
+.collapse-body{
+  display:none; padding-left:12px; padding-top:5px;
+}
+.collapse-body.show{
+  display:block;
 }
 
-#logBox {
-  border: 1px solid #ccc;
-  background: #f9f9f9;
-  padding: 10px;
-  height: 180px;
-  overflow-y: auto;
-  border-radius: 8px;
-}
-
-.logWin { color: darkgreen; }
-.logSkip { color: darkred; }
-.logSpin { color: navy; font-weight: bold; }
-.logUnsold { color: #880000; }
-.logInfo { color: #333; }
-
-.summary-player {
-  border: 1px solid #ddd;
-  padding: 10px;
-  margin-top: 6px;
-  border-radius: 8px;
-}
-
-.teamList {
-  display: none;
-  margin-top: 6px;
-}
-.teamList.show {
-  display: block;
-}
-
-.sectionHeader {
-  font-size: 22px;
-  margin-top: 20px;
-  font-weight: bold;
-}
-
-/* REMAINING / UNSOLD LISTS */
-.collapseSection {
-  border: 1px solid #ccc;
-  margin-top: 10px;
-  border-radius: 8px;
-}
-
-.collapseHeader {
-  background: #eee;
-  padding: 10px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.collapseBody {
-  display: none;
-  padding: 10px;
-  background: #f7f7f7;
-}
-
-.collapseBody.show {
-  display: block;
-}
-
-#unsoldPlayersBox {
-  padding: 10px;
-  border: 1px solid #ccc;
-  background: #fafafa;
-  border-radius: 10px;
-  margin-bottom: 50px;
-}
-
-/* Wheel centering */
-#wheelBox {
-  margin-top: 25px;
-  display: flex;
-  justify-content: center;
+/* MOBILE */
+@media(max-width:720px){
+  .main-layout{ flex-direction:column; }
+  #wheel{ width:210px; height:210px; }
+  .wheel-labels{ width:210px; height:210px; top:calc(50% - 105px); left:calc(50% - 105px); }
+  .log-box{ height:160px; }
 }
