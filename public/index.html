@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
   <!-- LOGIN PAGE -->
   <div id="loginPage">
     <div class="login-container">
@@ -28,7 +27,6 @@
 
   <!-- AUCTION PAGE -->
   <div id="auctionPage" class="hidden">
-
     <div class="top-bar">
       <div id="roomIdDisplay">Room ID — -----</div>
       <button id="startSpinBtn">Start Spin</button>
@@ -36,12 +34,14 @@
 
     <div class="main-layout">
       <div class="left-panel">
+
+        <!-- FIXED WHEEL SECTION -->
         <div class="wheel-section">
           <div id="wheel"></div>
-          <div id="wheelLabels" class="wheel-labels"></div>
           <div class="wheel-pointer">▼</div>
         </div>
 
+        <!-- Player Card -->
         <div class="player-card">
           <div id="playerName">Player Name</div>
           <div id="playerPos">(Position)</div>
@@ -70,23 +70,10 @@
       </div>
     </div>
 
-    <!-- SUMMARY PANEL -->
     <div class="summary-panel">
       <h2>Summary</h2>
       <div id="summaryList"></div>
     </div>
-
-    <!-- NEW SECTION BELOW SUMMARY -->
-    <div class="remaining-panel">
-      <h2>Remaining Players</h2>
-      <div id="remainingPlayersBox"></div>
-    </div>
-
-    <div class="unsold-panel">
-      <h2>Unsold Players</h2>
-      <div id="unsoldPlayersBox"></div>
-    </div>
-
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
