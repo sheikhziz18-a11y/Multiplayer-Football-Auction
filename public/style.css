@@ -58,7 +58,7 @@ body { margin:0; font-family:Arial; background:#fff; }
   );
 }
 .wheel-labels{
-  position:none !absolute; width:280px; height:280px;
+  position:absolute; width:280px; height:280px;
   top:calc(50% - 140px); left:calc(50% - 140px);
   pointer-events:none;
 }
