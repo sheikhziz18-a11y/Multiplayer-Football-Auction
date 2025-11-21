@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Football Auction Multiplayer</title>
+<link rel="stylesheet" href="style.css">
+<script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+  <h1 class="titleMain">Football Auction</h1>
+
+  <div class="loginBlock">
+    <h2>Create Room</h2>
+    <input id="createName" placeholder="Your Name">
+    <button id="createRoomBtn">Create</button>
+  </div>
+
+  <div class="loginBlock">
+    <h2>Join Room</h2>
+    <input id="joinName" placeholder="Your Name">
+    <input id="joinRoomId" placeholder="Room ID">
+    <button id="joinRoomBtn">Join</button>
+  </div>
+</div>
+
+<!-- AUCTION PAGE -->
+<div id="auctionPage" class="hidden">
+
+  <h1 id="roomIdDisplay"></h1>
+
+  <button id="startSpinBtn" class="bigButton">START SPIN</button>
+
+  <!-- WHEEL -->
+  <div id="wheelBox">
+    <canvas id="wheel" width="320" height="320"></canvas>
+  </div>
+
+  <!-- CURRENT PLAYER -->
+  <div id="playerCard">
+    <h2 id="playerName">Player Name</h2>
+    <div id="playerPos">Position</div>
+    <div id="playerBase">Base Price</div>
+  </div>
+
+  <!-- TIMERS -->
+  <div id="timerRow">
+    <div class="timerBox">
+      Initial Timer: <span id="initialTimer">60</span>s
+    </div>
+    <div class="timerBox">
+      Bid Timer: <span id="bidTimer">30</span>s
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div id="actionButtons">
+    <button id="bidBtn">Bid</button>
+    <button id="skipBtn">Skip</button>
+  </div>
+
+  <!-- LOG -->
+  <h2 class="sectionHeader">Auction Log</h2>
+  <div id="logBox"></div>
+
+  <!-- SUMMARY -->
+  <h2 class="sectionHeader">Player Summary</h2>
+  <div id="summaryList"></div>
+
+  <!-- REMAINING PLAYERS -->
+  <h2 class="sectionHeader">Remaining Players by Position</h2>
+  <div id="remainingPlayersBox"></div>
+
+  <!-- UNSOLD PLAYERS -->
+  <h2 class="sectionHeader">Unsold Players</h2>
+  <div id="unsoldPlayersBox"></div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
