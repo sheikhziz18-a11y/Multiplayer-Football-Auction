@@ -56,10 +56,7 @@ body { margin:0; font-family:Arial; background:#fff; }
     #eeddff 288deg 324deg,
     #cceeff 324deg 360deg
   );
-}
-.wheel-labels {
-  display: none !important; /* remove label overlay */
-}
+
 .slice-label{
   position:absolute; width:120px;
   left:50%; top:50%;
@@ -138,8 +135,6 @@ body { margin:0; font-family:Arial; background:#fff; }
 @media(max-width:720px){
   .main-layout{ flex-direction:column; }
   #wheel{ width:210px; height:210px; }
-  align-items: center; /* lock center on mobile */
-    margin-bottom: 10px;
-  .wheel-labels{ width:210px; height:210px; top:calc(50% - 105px); left:calc(50% - 105px); }
+  
   .log-box{ height:160px; }
 }
