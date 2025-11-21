@@ -38,7 +38,7 @@ body{ margin:0; font-family:Arial,Helvetica,sans-serif; background:#fff; color:#
   position:relative;
 }
 
-/* Wheel visual (keeps the same circular look but NO labels) */
+/* Wheel visual (keeps circular look, no labels) */
 #wheel{
   width:280px;
   height:280px;
@@ -86,7 +86,7 @@ body{ margin:0; font-family:Arial,Helvetica,sans-serif; background:#fff; color:#
 /* Log box */
 .log-box{ height:220px; overflow:auto; border:2px solid #111; padding:10px; background:#fff; border-radius:8px; font-size:14px; }
 .log-entry{ margin-bottom:6px; padding:6px; border-radius:6px; display:block; }
-.log-entry.info{ color:#111; background:transparent; }
+.log-entry.info{ color:#111; }
 .log-entry.spin{ color: var(--navy); font-weight:600; }
 .log-entry.skip{ color: var(--skip-red); }
 .log-entry.win{ color: var(--win-green); }
@@ -124,4 +124,11 @@ body{ margin:0; font-family:Arial,Helvetica,sans-serif; background:#fff; color:#
   #wheel{ width:210px; height:210px; }
   .wheel-section{ align-items:center; }
   .log-box{ height:160px; }
+  /* center right-panel components on mobile (buttons, timers, log) */
+  .right-panel { display:flex; flex-direction:column; align-items:center; }
+  .buttons-box { width:100%; display:flex; flex-direction:column; align-items:center; }
+  .buttons-box button { width:80%; margin-bottom:8px; }
+  .timers-box { width:100%; display:flex; flex-direction:row; justify-content:center; gap:8px; }
+  .timer { width:45%; }
+  .log-box { width:95%; }
 }
