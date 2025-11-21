@@ -15,6 +15,11 @@
     "basePrice": 55
   },
   {
+    "name": "Semenyo",
+    "position": "CM",
+    "basePrice": 50
+  },
+  {
     "name": "Pope",
     "position": "GK",
     "basePrice": 30
