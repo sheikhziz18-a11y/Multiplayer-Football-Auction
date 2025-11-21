@@ -122,27 +122,50 @@ body{ margin:0; font-family:Arial,Helvetica,sans-serif; background:#fff; color:#
 @media (max-width:720px) {
   .main-layout {
     flex-direction: column;
-    align-items: center; /* Center panels */
+    align-items: center; /* Keep wheel and player card centered */
   }
+
   .left-panel, .right-panel {
-    width: 100%; /* Full width panels */
-    text-align: center; /* Center content */
+    width: 100%;
+    text-align: center;
   }
+
+  .wheel-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center wheel */
+    margin-bottom: 10px;
+  }
+
   #wheel {
     width: 210px;
     height: 210px;
-    margin: auto; /* Center the wheel */
+    margin: auto;
   }
-  .wheel-section {
-    align-items: center; /* Center all wheel section elements */
-    justify-content: center; /* Ensure vertical alignment */
+
+  .player-card {
+    width: 90%;
+    margin: 10px auto;
     text-align: center;
   }
-  .buttons-box {
-    justify-content: center; /* Center buttons */
+
+  .timers-box {
+    display: flex;
+    justify-content: space-between; /* Two timers side by side */
+    width: 90%;
+    margin: 10px auto;
   }
+
+  .buttons-box {
+    display: flex;
+    justify-content: space-between; /* Bid and Skip side by side */
+    width: 90%;
+    margin: 10px auto;
+  }
+
   .summary-panel {
-    margin-left: auto;
-    margin-right: auto; /* Center summary panel */
+    width: 95%;
+    margin: 10px auto;
   }
 }
