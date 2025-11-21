@@ -202,8 +202,9 @@ function renderUnsold(list){
 }
 
 /* Wheel build */
-function buildWheelLabels(){
-  wheelLabels.innerHTML = "";
+function buildWheelLabels() {
+  wheelLabels.innerHTML = ""; // labels removed completely
+}
   const slices = POSITIONS.length;
   const radius = (wheel.clientWidth / 2) - 10;
 
