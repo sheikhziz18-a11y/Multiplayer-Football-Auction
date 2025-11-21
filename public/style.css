@@ -1,0 +1,152 @@
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #ffffff;
+  padding: 0 10px;
+}
+
+.hidden { display: none; }
+
+.titleMain {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.loginBlock {
+  background: #f5f5f5;
+  padding: 20px;
+  margin: 20px auto;
+  width: 300px;
+  border-radius: 10px;
+}
+
+#playerCard {
+  background: #fafafa;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+#timerRow {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+
+.timerBox {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.blink {
+  animation: blinkAnim 0.6s infinite;
+}
+@keyframes blinkAnim {
+  0% { color: red; }
+  50% { color: black; }
+  100% { color: red; }
+}
+
+#actionButtons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+#bidBtn {
+  background: #004d00;
+  color: navy;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+#skipBtn {
+  background: #b30000;
+  color: red;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.bigButton {
+  margin-top: 20px;
+  padding: 14px 25px;
+  font-size: 20px;
+}
+
+#logBox {
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  padding: 10px;
+  height: 180px;
+  overflow-y: auto;
+  border-radius: 8px;
+}
+
+.logWin { color: darkgreen; }
+.logSkip { color: darkred; }
+.logSpin { color: navy; font-weight: bold; }
+.logUnsold { color: #880000; }
+.logInfo { color: #333; }
+
+.summary-player {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-top: 6px;
+  border-radius: 8px;
+}
+
+.teamList {
+  display: none;
+  margin-top: 6px;
+}
+.teamList.show {
+  display: block;
+}
+
+.sectionHeader {
+  font-size: 22px;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+/* REMAINING / UNSOLD LISTS */
+.collapseSection {
+  border: 1px solid #ccc;
+  margin-top: 10px;
+  border-radius: 8px;
+}
+
+.collapseHeader {
+  background: #eee;
+  padding: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.collapseBody {
+  display: none;
+  padding: 10px;
+  background: #f7f7f7;
+}
+
+.collapseBody.show {
+  display: block;
+}
+
+#unsoldPlayersBox {
+  padding: 10px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  border-radius: 10px;
+  margin-bottom: 50px;
+}
+
+/* Wheel centering */
+#wheelBox {
+  margin-top: 25px;
+  display: flex;
+  justify-content: center;
+}
