@@ -1,11 +1,8 @@
 // script.js
-// Note: server reads players from /mnt/data/shuffled_players.json on the backend.
-// This client expects roomState to include:
-// - remainingPlayersByPosition: { GK: [...], CB: [...], ... }  (arrays of player objects)
-// - unsoldPlayers: [ ... ] (array of player objects)
-// Each player object should have at least { name, position, basePrice } or matching keys used by your server.
+// Client expects roomState to include:
+// - remainingPlayersByPosition: { GK: [...], CB: [...], ... }
+// - unsoldPlayers: [ ... ]
 
-// Socket init
 const socket = io();
 
 /* ELEMENTS */
@@ -68,7 +65,6 @@ socket.on("roomCreated", (roomId) => {
 });
 
 socket.on("roomState", (state) => {
-  // render all UI from server state
   renderRoomState(state);
 });
 
@@ -83,11 +79,11 @@ function joinAuctionPage(roomId) {
   roomIdDisplay.innerText = "Room ID — " + roomId;
 }
 
-/* RENDER */
+/* Render state */
 function renderRoomState(state) {
   if (!myId) myId = socket.id;
 
-  // show host controls
+  // host controls
   startSpinBtn.style.display = (myId === state.hostId) ? "inline-block" : "none";
 
   // player card
@@ -125,20 +121,23 @@ function renderRoomState(state) {
           : (state.currentBid < 200 ? state.currentBid + 5 : state.currentBid + 10);
 
       bidBtn.innerText = "Bid " + nextBid + "M";
+      // disable if I'm current bidder, or insufficient balance
       bidBtn.disabled = (state.currentBidder === myId || me.balance < nextBid);
+      // Also if me has previously skipped, server prevents bidding; the button still can be enabled until server rejects
     }
   }
 
-  skipBtn.disabled = !(state.auctionActive && state.currentPlayer);
+  // highest bidder cannot skip - server enforces; disable at UI to avoid user error
+  if (state.currentBidder === myId) skipBtn.disabled = true;
+  else skipBtn.disabled = !(state.auctionActive && state.currentPlayer);
 
-  // Logs
+  // Logs (join/disconnect are logged as info so color unchanged)
   renderLogs(state.log);
 
   // Summary
   renderSummary(state.players);
 
-  // Remaining players (grouped) and unsold
-  // State fields expected: remainingPlayersByPosition (object), unsoldPlayers (array)
+  // Remaining & unsold lists
   renderRemaining(state.remainingPlayersByPosition || {});
   renderUnsold(state.unsoldPlayers || []);
 }
@@ -164,7 +163,7 @@ function renderLogs(logArray) {
   logBox.scrollTop = logBox.scrollHeight;
 }
 
-/* Summary rendering */
+/* Summary */
 function renderSummary(players) {
   summaryList.innerHTML = "";
   for (let id in players) {
@@ -183,16 +182,12 @@ function renderSummary(players) {
   }
 }
 
-/* REMAINING PLAYERS - alphabetical inside each position
-   groups is expected as { GK: [{name, basePrice, position}, ...], ... }
-*/
+/* REMAINING PLAYERS - alphabetical inside each position */
 function renderRemaining(groups) {
-  // ensure positions order as POSITIONS array
-  remainingBox.innerHTML = ""; // clear
-  for (let pos of POSITIONS) {
+  remainingBox.innerHTML = "";
+  const order = POSITIONS.slice();
+  for (let pos of order) {
     const list = Array.isArray(groups[pos]) ? groups[pos].slice() : [];
-
-    // alphabetical sort by name (case-insensitive)
     list.sort((a,b) => {
       const an = (a.name || "").toLowerCase();
       const bn = (b.name || "").toLowerCase();
@@ -201,27 +196,21 @@ function renderRemaining(groups) {
       return 0;
     });
 
-    // create collapsible section
     const wrapper = document.createElement("div");
     wrapper.className = "collapseSection";
 
     const header = document.createElement("div");
     header.className = "collapseHeader";
     header.innerText = `${pos} (${list.length})`;
-    header.tabIndex = 0; // focusable
+    header.tabIndex = 0;
 
     const body = document.createElement("div");
     body.className = "collapseBody";
+    if (list.length === 0) body.innerHTML = `<div class="empty-note">No players left</div>`;
+    else body.innerHTML = list.map(p => `<div class="player-row">${escapeHtml(p.name)} — ${p.basePrice ?? p.price ?? ""}M</div>`).join("");
 
-    if (list.length === 0) {
-      body.innerHTML = `<div class="empty-note">No players left</div>`;
-    } else {
-      body.innerHTML = list.map(p => `<div class="player-row">${escapeHtml(p.name)} — ${p.basePrice ?? p.price ?? ""}M</div>`).join("");
-    }
-
-    // toggle stays until user clicks again
     header.addEventListener("click", () => body.classList.toggle("show"));
-    header.addEventListener("keypress", (e) => { if (e.key === "Enter" || e.key === " ") body.classList.toggle("show"); });
+    header.addEventListener("keypress", e => { if (e.key === "Enter" || e.key === " ") body.classList.toggle("show"); });
 
     wrapper.appendChild(header);
     wrapper.appendChild(body);
@@ -229,19 +218,14 @@ function renderRemaining(groups) {
   }
 }
 
-/* UNSOLD LIST - latest first, show base price */
+/* UNSOLD - latest first (server pushes newest at front) */
 function renderUnsold(list) {
   unsoldBox.innerHTML = "";
   if (!Array.isArray(list) || list.length === 0) {
     unsoldBox.innerHTML = "<div class='empty-note'>No unsold players yet</div>";
     return;
   }
-  // latest unsold first = assume server pushes new unsold at front; if not, reverse:
-  const arr = list.slice(); // copy
-  // If your server sends newest first, keep as is. If not, reverse here:
-  // arr.reverse();
-
-  arr.forEach(p => {
+  list.forEach(p => {
     const row = document.createElement("div");
     row.className = "unsold-row";
     row.innerText = `${p.position} — ${p.name} — ${p.basePrice ?? p.price ?? ""}M`;
@@ -249,26 +233,7 @@ function renderUnsold(list) {
   });
 }
 
-/* WHEEL ANIMATION: no labels, just rotate the wheel element */
-function animateWheelToIndex(index) {
-  const slices = POSITIONS.length;
-  const sliceAngle = 360 / slices;
-  const targetAngle = index * sliceAngle + sliceAngle / 2;
-  const rotations = 6;
-  const finalAngle = rotations * 360 + (360 - targetAngle);
-
-  wheel.style.transition = "transform 2.5s cubic-bezier(.25,.8,.25,1)";
-  wheelRotation = finalAngle;
-  wheel.style.transform = `rotate(${wheelRotation}deg)`;
-
-  setTimeout(() => {
-    wheel.style.transition = "";
-    wheelRotation = wheelRotation % 360;
-    wheel.style.transform = `rotate(${wheelRotation}deg)`;
-  }, 2600);
-}
-
-/* BUTTON ACTIONS */
+/* BUTTONS */
 startSpinBtn.onclick = () => {
   if (!currentRoom) return alert("Room not set");
   socket.emit("startSpin", currentRoom);
@@ -284,17 +249,73 @@ skipBtn.onclick = () => {
   socket.emit("skip", currentRoom);
 };
 
-/* small utility to escape HTML in names */
+/* WHEEL ANIMATION - always clockwise */
+function animateWheelToIndex(index) {
+  const slices = POSITIONS.length;
+  const sliceAngle = 360 / slices;
+  const targetAngle = index * sliceAngle + sliceAngle / 2;
+  const rotations = 6;
+  // always add positive rotation (clockwise)
+  const finalAngle = (rotations * 360) + (360 - targetAngle);
+
+  // rotate by adding to stored rotation so wheel continues correctly
+  wheelRotation = (wheelRotation || 0) + finalAngle;
+
+  wheel.style.transition = "transform 2.5s cubic-bezier(.25,.8,.25,1)";
+  wheel.style.transform = `rotate(${wheelRotation}deg)`;
+
+  setTimeout(() => {
+    wheel.style.transition = "";
+    wheelRotation = wheelRotation % 360;
+    wheel.style.transform = `rotate(${wheelRotation}deg)`;
+  }, 2600);
+}
+
+/* escape html */
 function escapeHtml(str) {
   if (!str) return "";
   return str.replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]);
 }
 
-/* initialize minimal wheel size alignment on load + resize */
-function alignWheel() {
-  // We keep wheel as a circular element with fixed size CSS; no labels to reposition.
-  // This ensures the wheel stays centered above player card.
-  // If you want dynamic sizing, add logic here.
+/* center layout adjustments for mobile */
+function adjustMobileCentering() {
+  // on small screens, center the right-panel contents horizontally
+  if (window.innerWidth <= 720) {
+    // center wheel and player card already in CSS; ensure log and buttons are centered
+    document.querySelectorAll('.right-panel, .log-box, .buttons-box, .timers-box').forEach(el => {
+      el.style.display = "flex";
+      el.style.flexDirection = "column";
+      el.style.alignItems = "center";
+    });
+    // timers-box children (timer elements) center and full width
+    document.querySelectorAll('.timer').forEach(t => {
+      t.style.width = "90%";
+      t.style.marginBottom = "8px";
+    });
+    document.querySelectorAll('.buttons-box button').forEach(b => {
+      b.style.width = "80%";
+      b.style.marginBottom = "8px";
+    });
+    // log-box full width and centered
+    document.getElementById('logBox').style.width = "95%";
+  } else {
+    // restore desktop defaults
+    document.querySelectorAll('.right-panel, .log-box, .buttons-box, .timers-box').forEach(el => {
+      el.style.display = "";
+      el.style.flexDirection = "";
+      el.style.alignItems = "";
+      el.style.width = "";
+    });
+    document.querySelectorAll('.timer').forEach(t => {
+      t.style.width = "";
+      t.style.marginBottom = "";
+    });
+    document.querySelectorAll('.buttons-box button').forEach(b => {
+      b.style.width = "";
+      b.style.marginBottom = "";
+    });
+    document.getElementById('logBox').style.width = "";
+  }
 }
-window.addEventListener("load", alignWheel);
-window.addEventListener("resize", alignWheel);
+window.addEventListener('resize', adjustMobileCentering);
+window.addEventListener('load', adjustMobileCentering);
