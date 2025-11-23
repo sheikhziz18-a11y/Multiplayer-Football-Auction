@@ -412,6 +412,43 @@ io.on("connection", (socket) => {
 
     broadcastRoomState(roomId);
   });
+/* FORCE SELL — HOST ONLY */
+socket.on("forceSell", (roomId) => {
+  const room = rooms[roomId];
+  if (!room) return;
+
+  // must be host
+  if (socket.id !== room.hostId) return;
+
+  // cannot use when no bid
+  if (!room.currentPlayer || room.currentBid === 0 || !room.currentBidder) return;
+
+  // clear timers
+  if (room.initialTimer) clearInterval(room.initialTimer);
+  if (room.bidTimer) clearInterval(room.bidTimer);
+
+  const player = room.currentPlayer;
+  const winnerId = room.currentBidder;
+  const w = room.players[winnerId];
+
+  // log messages
+  pushLog(room, "info", "Host used Force Sell");
+  pushLog(room, "win", `${w.name} won ${player.name} for ${room.currentBid}M`);
+
+  // transaction
+  w.team.push({ name: player.name, price: room.currentBid });
+  w.balance -= room.currentBid;
+
+  // reset round
+  room.currentPlayer = null;
+  room.currentBid = 0;
+  room.currentBidder = null;
+  room.currentPosition = null;
+  room.auctionActive = false;
+
+  resetTimers(room);
+  broadcastRoomState(roomId);
+});
 
   /* DISCONNECT — DO NOT DELETE PLAYER */
   socket.on("disconnect", () => {
