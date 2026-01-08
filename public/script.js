@@ -28,13 +28,28 @@ const skipBtn = document.getElementById("skipBtn");
 const logBox = document.getElementById("logBox");
 const summaryList = document.getElementById("summaryList");
 
-/* STATE */
+const remainingBox = document.getElementById("remainingBox");
+const unsoldBox = document.getElementById("unsoldBox");
+
+/* UI STATE (THIS FIXES AUTO-CLOSE BUG) */
+const uiState = {
+  remainingOpen: false,
+  unsoldOpen: false
+};
+
+document.getElementById("remainingToggle").onclick = () => {
+  uiState.remainingOpen = !uiState.remainingOpen;
+  renderCollapsibles();
+};
+
+document.getElementById("unsoldToggle").onclick = () => {
+  uiState.unsoldOpen = !uiState.unsoldOpen;
+  renderCollapsibles();
+};
+
 let currentRoom = null;
 let myId = null;
 let wheelRotation = 0;
-
-// MUST MATCH SERVER ORDER
-const POSITIONS = ["GK","CB","RB","LB","RW","CF","AM","LW","CM","DM"];
 
 /* CREATE / JOIN */
 document.getElementById("createRoomBtn").onclick = () => {
@@ -44,13 +59,10 @@ document.getElementById("createRoomBtn").onclick = () => {
 
 document.getElementById("joinRoomBtn").onclick = () => {
   if (!joinName.value || !joinRoomId.value) return alert("Enter all fields");
-  socket.emit("joinRoom", {
-    roomId: joinRoomId.value.trim(),
-    name: joinName.value
-  });
+  socket.emit("joinRoom", { roomId: joinRoomId.value.trim(), name: joinName.value });
 };
 
-/* SOCKET EVENTS */
+/* SOCKET */
 socket.on("roomJoined", (roomId) => {
   currentRoom = roomId;
   loginPage.classList.add("hidden");
@@ -62,22 +74,15 @@ socket.on("roomState", (state) => {
   renderRoomState(state);
 });
 
-socket.on("wheelResult", ({ index }) => {
-  spinWheel(index);
-});
+socket.on("wheelResult", ({ index }) => animateWheel(index));
 
 /* RENDER */
 function renderRoomState(state) {
   if (!myId) myId = socket.id;
 
-  // host buttons
-  startSpinBtn.style.display = (myId === state.hostId) ? "inline-block" : "none";
-  forceSellBtn.style.display =
-    (myId === state.hostId && state.currentBid > 0 && state.auctionActive)
-      ? "inline-block"
-      : "none";
+  startSpinBtn.style.display = myId === state.hostId ? "inline-block" : "none";
+  forceSellBtn.classList.toggle("hidden", myId !== state.hostId || !state.currentBidder);
 
-  // player card
   if (state.currentPlayer) {
     playerNameBox.innerText = state.currentPlayer.name;
     playerPosBox.innerText = `(${state.currentPosition})`;
@@ -88,55 +93,40 @@ function renderRoomState(state) {
     playerBaseBox.innerText = "Base Price";
   }
 
-  // timers
   initialTimerBox.innerText = state.initialTimeLeft;
   bidTimerBox.innerText = state.bidTimeLeft;
 
-  blink(initialTimerBox, state.initialTimeLeft < 5 && state.currentBid === 0 && state.auctionActive);
-  blink(bidTimerBox, state.bidTimeLeft < 5 && state.currentBid > 0 && state.auctionActive);
-
-  // bid button
-  if (!state.auctionActive || !state.currentPlayer) {
-    bidBtn.disabled = true;
-  } else {
-    const me = state.players[myId];
-    if (!me || me.team.length >= 11) {
-      bidBtn.disabled = true;
-    } else {
-      const nextBid =
-        state.currentBid === 0
-          ? state.currentPlayer.basePrice
-          : state.currentBid < 200
-          ? state.currentBid + 5
-          : state.currentBid + 10;
-
-      bidBtn.innerText = "Bid " + nextBid + "M";
-      bidBtn.disabled = (state.currentBidder === myId || me.balance < nextBid);
-    }
-  }
-
-  skipBtn.disabled = !(state.auctionActive && state.currentPlayer);
-
   renderLogs(state.log);
   renderSummary(state.players);
+  renderRemaining(state.remainingPlayersByPosition);
+  renderUnsold(state.unsoldPlayers);
+  renderCollapsibles();
 }
 
-/* BLINK */
-function blink(el, on) {
-  if (on) el.classList.add("blink");
-  else el.classList.remove("blink");
+/* COLLAPSIBLES */
+function renderCollapsibles() {
+  remainingBox.style.display = uiState.remainingOpen ? "block" : "none";
+  unsoldBox.style.display = uiState.unsoldOpen ? "block" : "none";
 }
 
-/* LOGS */
-function renderLogs(list) {
-  logBox.innerHTML = "";
-  list.slice(-300).forEach(l => {
+/* REMAINING */
+function renderRemaining(groups) {
+  remainingBox.innerHTML = "";
+  for (let pos in groups) {
+    if (!groups[pos].length) continue;
     const div = document.createElement("div");
-    div.className = "log-entry " + l.type;
-    div.textContent = l.text;
-    logBox.appendChild(div);
-  });
-  logBox.scrollTop = logBox.scrollHeight;
+    div.innerHTML = `<b>${pos}</b><br>` + groups[pos]
+      .map(p => `${p.name} — ${p.basePrice}M`)
+      .join("<br>");
+    remainingBox.appendChild(div);
+  }
+}
+
+/* UNSOLD */
+function renderUnsold(list) {
+  unsoldBox.innerHTML = list
+    .map(p => `${p.name} — ${p.basePrice}M`)
+    .join("<br>");
 }
 
 /* SUMMARY */
@@ -147,16 +137,24 @@ function renderSummary(players) {
     const div = document.createElement("div");
     div.className = "summary-player";
     div.innerHTML = `
-      <div><b>${p.name}</b> — Balance: ${p.balance}M — Players: ${p.team.length}/11</div>
-      <div class="player-team" id="team-${id}">
-        ${p.team.map(t => `${t.name} — ${t.price}M`).join("<br>")}
-      </div>
+      <b>${p.name}</b> — Balance: ${p.balance}M — ${p.team.length}/11
+      <div class="player-team">${p.team.map(t => `${t.name} — ${t.price}M`).join("<br>")}</div>
     `;
-    div.onclick = () => {
-      document.getElementById("team-" + id).classList.toggle("show");
-    };
+    div.onclick = () => div.querySelector(".player-team").classList.toggle("show");
     summaryList.appendChild(div);
   }
+}
+
+/* LOGS */
+function renderLogs(logs) {
+  logBox.innerHTML = "";
+  logs.forEach(l => {
+    const d = document.createElement("div");
+    d.className = "log-entry " + l.type;
+    d.textContent = l.text;
+    logBox.appendChild(d);
+  });
+  logBox.scrollTop = logBox.scrollHeight;
 }
 
 /* BUTTONS */
@@ -165,12 +163,10 @@ forceSellBtn.onclick = () => socket.emit("forceSell", currentRoom);
 bidBtn.onclick = () => socket.emit("bid", currentRoom);
 skipBtn.onclick = () => socket.emit("skip", currentRoom);
 
-/* WHEEL (CLOCKWISE ONLY) */
-function spinWheel(index) {
-  const slice = 360 / POSITIONS.length;
-  const target = index * slice + slice / 2;
-  const spins = 6;
-  wheelRotation += spins * 360 + (360 - target);
+/* WHEEL */
+function animateWheel(index) {
+  const slice = 360 / 10;
+  wheelRotation += 360 * 5 + (360 - (index * slice + slice / 2));
   wheel.style.transition = "transform 2.5s ease-out";
   wheel.style.transform = `rotate(${wheelRotation}deg)`;
 }
