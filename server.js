@@ -4,30 +4,22 @@ const http = require("http");
 const { Server } = require("socket.io");
 const fs = require("fs");
 
-/* =========================
-   LOAD PLAYERS
-========================= */
 let MASTER_PLAYERS = JSON.parse(
   fs.readFileSync("shuffled_players.json", "utf8")
 );
 
 const app = express();
 const server = http.createServer(app);
-
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
 app.use(express.static("public"));
 
-/* =========================
-   ROOM STATE
-========================= */
+/* ================= ROOM STATE ================= */
 let rooms = {};
 
-/* =========================
-   HELPERS
-========================= */
+/* ================= HELPERS ================= */
 function generateRoomId() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
@@ -39,13 +31,23 @@ function pushLog(room, type, text) {
 function resetTimers(room) {
   if (room.initialTimer) clearInterval(room.initialTimer);
   if (room.bidTimer) clearInterval(room.bidTimer);
-
   room.initialTimer = null;
   room.bidTimer = null;
-
-  room.initialTimeLeft = 100; // ✅ UPDATED
+  room.initialTimeLeft = 100; // ✅ 100 seconds
   room.bidTimeLeft = 60;
   room.skippedPlayers = [];
+}
+
+function getRemainingPlayersByPosition(room) {
+  const map = {
+    GK: [], LB: [], RB: [], CB: [],
+    DM: [], CM: [], AM: [],
+    LW: [], RW: [], CF: []
+  };
+  room.availablePlayers.forEach(p => {
+    if (map[p.position]) map[p.position].push(p);
+  });
+  return map;
 }
 
 function broadcastRoomState(roomId) {
@@ -64,61 +66,45 @@ function broadcastRoomState(roomId) {
     auctionActive: room.auctionActive,
     spinInProgress: room.spinInProgress,
     log: room.log,
+    remainingPlayersByPosition: getRemainingPlayersByPosition(room),
     unsoldPlayers: room.unsoldPlayers
   });
 }
 
 function pickRandomPlayer(room, position) {
-  const pool = room.availablePlayers.filter(p => p.position === position);
-  if (pool.length === 0) return null;
-
-  const chosen = pool[Math.floor(Math.random() * pool.length)];
+  const list = room.availablePlayers.filter(p => p.position === position);
+  if (!list.length) return null;
+  const chosen = list[Math.floor(Math.random() * list.length)];
   room.availablePlayers = room.availablePlayers.filter(p => p !== chosen);
   return chosen;
 }
 
-/* =========================
-   TIMERS
-========================= */
+/* ================= TIMERS ================= */
 function startInitialTimer(roomId) {
   const room = rooms[roomId];
-  room.initialTimeLeft = 100;
-
   room.initialTimer = setInterval(() => {
     room.initialTimeLeft--;
-
     if (room.initialTimeLeft <= 0) {
       clearInterval(room.initialTimer);
-      room.initialTimer = null;
-      room.auctionActive = false;
       endPlayer(roomId);
     }
-
     broadcastRoomState(roomId);
   }, 1000);
 }
 
 function startBidTimer(roomId) {
   const room = rooms[roomId];
-  room.bidTimeLeft = 60;
-
   room.bidTimer = setInterval(() => {
     room.bidTimeLeft--;
-
     if (room.bidTimeLeft <= 0) {
       clearInterval(room.bidTimer);
-      room.bidTimer = null;
-      room.auctionActive = false;
       endPlayer(roomId);
     }
-
     broadcastRoomState(roomId);
   }, 1000);
 }
 
-/* =========================
-   END PLAYER (FINAL DECISION)
-========================= */
+/* ================= END PLAYER ================= */
 function endPlayer(roomId) {
   const room = rooms[roomId];
   const player = room.currentPlayer;
@@ -129,30 +115,23 @@ function endPlayer(roomId) {
     const winner = room.players[room.currentBidder];
     winner.team.push({ name: player.name, price: room.currentBid });
     winner.balance -= room.currentBid;
-
-    pushLog(
-      room,
-      "win",
-      `${winner.name} won ${player.name} for ${room.currentBid}M`
-    );
+    pushLog(room, "win", `${winner.name} won ${player.name} for ${room.currentBid}M`);
   } else {
     room.unsoldPlayers.unshift(player);
     pushLog(room, "unsold", `${player.name} was unsold`);
   }
 
   room.currentPlayer = null;
+  room.currentPosition = null;
   room.currentBid = 0;
   room.currentBidder = null;
-  room.currentPosition = null;
   room.auctionActive = false;
 
   resetTimers(room);
   broadcastRoomState(roomId);
 }
 
-/* =========================
-   SPIN
-========================= */
+/* ================= SPIN ================= */
 function spinWheel(roomId) {
   const room = rooms[roomId];
   if (!room || room.spinInProgress || room.auctionActive) return;
@@ -161,43 +140,37 @@ function spinWheel(roomId) {
   const index = Math.floor(Math.random() * positions.length);
   const pos = positions[index];
 
+  io.to(roomId).emit("wheelResult", { index, position: pos });
+
   room.spinInProgress = true;
-  resetTimers(room);
   broadcastRoomState(roomId);
 
-  io.to(roomId).emit("wheelResult", { index });
-
   setTimeout(() => {
-    const picked = pickRandomPlayer(room, pos);
+    const player = pickRandomPlayer(room, pos);
+    room.spinInProgress = false;
 
-    if (!picked) {
+    if (!player) {
       pushLog(room, "info", `No players left for ${pos}`);
-      room.spinInProgress = false;
       broadcastRoomState(roomId);
       return;
     }
 
-    room.currentPlayer = picked;
+    room.currentPlayer = player;
     room.currentPosition = pos;
     room.auctionActive = true;
-    room.spinInProgress = false;
+    resetTimers(room);
 
-    pushLog(room, "spin", `${pos} → ${picked.name} (${picked.basePrice}M)`);
-
+    pushLog(room, "spin", `${pos} → ${player.name} (${player.basePrice}M)`);
     broadcastRoomState(roomId);
     startInitialTimer(roomId);
   }, 2500);
 }
 
-/* =========================
-   SOCKET LOGIC
-========================= */
+/* ================= SOCKET ================= */
 io.on("connection", socket => {
 
-  /* CREATE ROOM */
   socket.on("createRoom", name => {
     const roomId = generateRoomId();
-
     rooms[roomId] = {
       hostId: socket.id,
       players: {},
@@ -218,10 +191,7 @@ io.on("connection", socket => {
     };
 
     rooms[roomId].players[socket.id] = {
-      name,
-      balance: 1000,
-      team: [],
-      active: true
+      name, balance: 1000, team: []
     };
 
     socket.join(roomId);
@@ -229,58 +199,33 @@ io.on("connection", socket => {
     broadcastRoomState(roomId);
   });
 
-  /* JOIN ROOM (RECONNECT BY NAME) */
   socket.on("joinRoom", ({ roomId, name }) => {
     const room = rooms[roomId];
     if (!room) return;
 
-    let oldId = Object.keys(room.players).find(
-      id => room.players[id].name === name
-    );
-
-    if (oldId) {
-      room.players[socket.id] = room.players[oldId];
-      delete room.players[oldId];
-    } else {
-      room.players[socket.id] = {
-        name,
-        balance: 1000,
-        team: [],
-        active: true
-      };
-    }
-
+    room.players[socket.id] = { name, balance: 1000, team: [] };
     socket.join(roomId);
     socket.emit("roomJoined", roomId);
     broadcastRoomState(roomId);
   });
 
-  /* START SPIN */
   socket.on("startSpin", roomId => {
-    const room = rooms[roomId];
-    if (!room) return;
-    if (socket.id !== room.hostId) return;
-    spinWheel(roomId);
+    if (rooms[roomId]?.hostId === socket.id) spinWheel(roomId);
   });
 
-  /* BID */
   socket.on("bid", roomId => {
     const room = rooms[roomId];
-    if (!room || !room.auctionActive) return;
+    if (!room?.auctionActive) return;
 
     if (room.skippedPlayers.includes(socket.id)) return;
 
     const me = room.players[socket.id];
-    if (!me) return;
+    let next =
+      room.currentBid === 0 ? room.currentPlayer.basePrice :
+      room.currentBid < 200 ? room.currentBid + 5 :
+      room.currentBid + 10;
 
-    let nextBid =
-      room.currentBid === 0
-        ? room.currentPlayer.basePrice
-        : room.currentBid < 200
-        ? room.currentBid + 5
-        : room.currentBid + 10;
-
-    if (me.balance < nextBid) return;
+    if (me.balance < next) return;
 
     if (room.currentBid === 0) {
       clearInterval(room.initialTimer);
@@ -289,19 +234,18 @@ io.on("connection", socket => {
       room.bidTimeLeft = 60;
     }
 
-    room.currentBid = nextBid;
+    room.currentBid = next;
     room.currentBidder = socket.id;
-
-    pushLog(room, "info", `${me.name} bid ${nextBid}M`);
+    pushLog(room, "info", `${me.name} bid ${next}M`);
     broadcastRoomState(roomId);
   });
 
-  /* SKIP */
+  /* ✅ FIXED SKIP LOGIC */
   socket.on("skip", roomId => {
     const room = rooms[roomId];
-    if (!room || !room.auctionActive) return;
+    if (!room?.auctionActive) return;
 
-    // ❌ current bidder CANNOT skip
+    // ❌ Highest bidder cannot skip
     if (socket.id === room.currentBidder) return;
 
     if (!room.skippedPlayers.includes(socket.id)) {
@@ -309,46 +253,28 @@ io.on("connection", socket => {
       pushLog(room, "skip", `${room.players[socket.id].name} skipped`);
     }
 
-    const activePlayers = Object.keys(room.players);
-    const others = activePlayers.filter(
-      id => id !== room.currentBidder
-    );
+    const totalPlayers = Object.keys(room.players).length;
+    const activeSkips = room.skippedPlayers.length;
 
-    if (
-      room.currentBidder &&
-      others.every(id => room.skippedPlayers.includes(id))
-    ) {
-      clearInterval(room.initialTimer);
+    // ✅ everyone except highest bidder skipped
+    if (room.currentBidder && activeSkips === totalPlayers - 1) {
       clearInterval(room.bidTimer);
-      room.auctionActive = false;
       endPlayer(roomId);
+      return;
+    }
+
+    // ✅ everyone skipped AND no bids
+    if (!room.currentBidder && activeSkips === totalPlayers) {
+      clearInterval(room.initialTimer);
+      endPlayer(roomId);
+      return;
     }
 
     broadcastRoomState(roomId);
   });
 
-  /* FORCE SELL (HOST ONLY) */
-  socket.on("forceSell", roomId => {
-    const room = rooms[roomId];
-    if (!room) return;
-    if (socket.id !== room.hostId) return;
-    if (!room.currentBidder) return;
-
-    pushLog(room, "info", "Host used Force Sell");
-
-    clearInterval(room.initialTimer);
-    clearInterval(room.bidTimer);
-    room.auctionActive = false;
-
-    endPlayer(roomId);
-  });
-
 });
 
-/* =========================
-   START SERVER
-========================= */
+/* ================= START ================= */
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () =>
-  console.log("Server running on port " + PORT)
-);
+server.listen(PORT, () => console.log("Server running on port " + PORT));
