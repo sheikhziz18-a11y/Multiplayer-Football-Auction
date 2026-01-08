@@ -44,7 +44,7 @@ function resetTimers(room) {
   room.bidTimer = null;
 
   room.initialTimeLeft = 100; // ✅ UPDATED
-  room.bidTimeLeft = 45;
+  room.bidTimeLeft = 60;
   room.skippedPlayers = [];
 }
 
@@ -100,7 +100,7 @@ function startInitialTimer(roomId) {
 
 function startBidTimer(roomId) {
   const room = rooms[roomId];
-  room.bidTimeLeft = 45;
+  room.bidTimeLeft = 60;
 
   room.bidTimer = setInterval(() => {
     room.bidTimeLeft--;
@@ -211,7 +211,7 @@ io.on("connection", socket => {
       initialTimer: null,
       bidTimer: null,
       initialTimeLeft: 100,
-      bidTimeLeft: 45,
+      bidTimeLeft: 60,
       auctionActive: false,
       spinInProgress: false,
       log: []
@@ -286,7 +286,7 @@ io.on("connection", socket => {
       clearInterval(room.initialTimer);
       startBidTimer(roomId);
     } else {
-      room.bidTimeLeft = 45;
+      room.bidTimeLeft = 60;
     }
 
     room.currentBid = nextBid;
