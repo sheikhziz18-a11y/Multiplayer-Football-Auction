@@ -21,6 +21,36 @@ app.use(express.static("public"));
 ============================ */
 let rooms = {};
 
+/* SKIP */
+socket.on("skip", (roomId) => {
+  const room = rooms[roomId];
+  if (!room || !room.auctionActive) return;
+
+  if (!room.skippedPlayers.includes(socket.id)) {
+    room.skippedPlayers.push(socket.id);
+    pushLog(room, "skip", `${room.players[socket.id].name} skipped`);
+  }
+
+  const totalPlayers = Object.keys(room.players).length;
+  const activeRemaining = totalPlayers - room.skippedPlayers.length;
+
+  // 🔑 RULE HANDLING
+  if (activeRemaining <= 1) {
+    if (room.initialTimer) clearInterval(room.initialTimer);
+    if (room.bidTimer) clearInterval(room.bidTimer);
+
+    // ✅ if someone bid → sold
+    if (room.currentBidder) {
+      endPlayer(roomId, true);
+    } else {
+      // ❌ no bids → unsold
+      endPlayer(roomId, false);
+    }
+  }
+
+  broadcastRoomState(roomId);
+});
+
 /* ============================
    HELPERS
 ============================ */
