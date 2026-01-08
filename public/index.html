@@ -8,6 +8,7 @@
 </head>
 <body>
 
+<!-- LOGIN PAGE -->
 <div id="loginPage">
   <div class="login-container">
     <div class="title">FOOTBALL AUCTION</div>
@@ -27,17 +28,20 @@
   </div>
 </div>
 
+<!-- AUCTION PAGE -->
 <div id="auctionPage" class="hidden">
+
   <div class="top-bar">
     <div id="roomIdDisplay">Room ID — -----</div>
     <div class="host-buttons">
       <button id="startSpinBtn">Start Spin</button>
-      <button id="forceSellBtn" class="force-btn">Force Sell</button>
+      <button id="forceSellBtn" class="force-btn hidden">FORCE SELL</button>
     </div>
   </div>
 
   <div class="main-layout">
     <div class="left-panel">
+
       <div class="wheel-section">
         <div id="wheel"></div>
         <div class="wheel-pointer">▼</div>
@@ -48,13 +52,15 @@
         <div id="playerPos">(Position)</div>
         <div id="playerBase">Base Price</div>
       </div>
+
     </div>
 
     <div class="right-panel">
+
       <div class="timers-box">
         <div class="timer">
           <div class="timer-label">Initial Timer</div>
-          <div id="initialTimer">60</div>
+          <div id="initialTimer">100</div>
         </div>
         <div class="timer">
           <div class="timer-label">Bid Timer</div>
@@ -74,7 +80,22 @@
   <div class="summary-panel">
     <h2>Summary</h2>
     <div id="summaryList"></div>
+
+    <div class="extra-panels">
+
+      <div class="collapsible">
+        <h3 id="remainingToggle">Remaining Players ▾</h3>
+        <div id="remainingBox" class="collapsible-content"></div>
+      </div>
+
+      <div class="collapsible">
+        <h3 id="unsoldToggle">Unsold Players ▾</h3>
+        <div id="unsoldBox" class="collapsible-content"></div>
+      </div>
+
+    </div>
   </div>
+
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
